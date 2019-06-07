@@ -2,7 +2,7 @@
 
 ## Synopsis
 
-Gets event from the Office 365 unified audit log and outputs them into the pipeline (as hashtables).
+Gets event from the Office 365 unified audit log and outputs them into the pipeline.
 
 ## Description
 
@@ -16,7 +16,13 @@ Microsoft recommends "if you want to programmatically download data from the Off
 
 As with Search-UnifiedAuditLog, you need to be assigned permissions before you can run this cmdlet. To find the permissions required to run any cmdlet or parameter in your organization, see [the online docs](https://technet.microsoft.com/library/mt432940.aspx), and look for Search-UnifiedAuditLog.
 
-## Examples
+## Usage and Examples
+
+```powershell
+PS C:\> Import-Module .\path\to\Get-UnifiedAuditLog.psm1
+```
+
+Import the module to get access to the `Get-UnifiedAuditLog` cmdlet
 
 ```powershell
 PS C:\> Get-UnifiedAuditLog -StartDate (Get-Date).AddDays(-7) -Upn user@o365.domain.com -IntervalMinutes 120 -Verbose -WarningAction 'Continue' | ConvertTo-Json -Compress -Depth 100 | Out-File .\o365.logs.json -Encoding UTF8
@@ -59,3 +65,7 @@ The ResultSize parameter specifies the maximum number of results to return. The 
 ## Notes
 
 Submit issues, contribute, and view the license at the [github repo](https://github.com/counteractive).
+
+## License and Notice
+
+See the included [`LICENSE`](./LICENSE) file for license terms and [NOTICE](./NOTICE) file for attribution.
