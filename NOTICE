@@ -1,0 +1,17 @@
+The inline documentation and README content for this module draw substantially from the documentation for the Search-UnifiedAuditLog cmdlet, retrieved from https://docs.microsoft.com/en-us/powershell/module/exchange/policy-and-compliance-audit/search-unifiedauditlog on or about 7 Jun 2019. Per section 3 of the license for that material:
+
+a. This NOTICE asserts:
+
+  i. The creator(s) of the Licensed Material (i.e., the Search-UnifiedAuditLog documentation) and any others designated to receive attribution are as follows: Microsoft Corporation and its contributors;
+
+  ii. The Licensed Material is copyright Microsoft Corporation and its contributors;
+
+  iii. The Licensed Material is licenced under the [Creative Commons Attribution 4.0 International Public License](https://creativecommons.org/licenses/by/4.0/legalcode);
+
+  iv. The aforementioned license disclaims warranties;
+
+  v. The Licensed Material is available at https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.diagnostics/get-winevent;
+
+b. The author modified the Licensed Material to correspond to this module.  There were no indications of previous attributable modifications.
+
+c. As noted above, the Licensed Material is licensed under the [Creative Commons Attribution 4.0 International Public License](https://creativecommons.org/licenses/by/4.0/legalcode);
