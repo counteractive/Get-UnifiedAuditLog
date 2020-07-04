@@ -1,30 +1,32 @@
-﻿$RESULT_SIZE_LIMIT = 5000   # max permitted ResultSize parameter
-$SESSION_SIZE_LIMIT = 50000 # max permitted under SessionCommand ReturnLargeSet
+﻿$SESSION_SIZE_LIMIT = 50000 # max permitted under SessionCommand ReturnLargeSet
 $DEFAULT_INTERVAL_MINUTES = 30
-$DEFAULT_RESULT_SIZE = $RESULT_SIZE_LIMIT
 $DEFAULT_SESSION_SIZE = $SESSION_SIZE_LIMIT
 $DEFAULT_RETRY_LIMIT = 3
 
 function Get-UnifiedAuditLog {
 <#
 .SYNOPSIS
-Gets event from the Office 365 unified audit log and outputs them into the pipeline (as hashtables).
+Gets events from the Office 365 unified audit log and outputs them into the pipeline.
 
 .DESCRIPTION
-The Get-UnifiedAuditLog cmdlet is a wrapper around the Search-UnifiedAuditLog cmdlet that allows you to get data from the unified auditing log available in the Office 365 Security & Compliance Center. For more information, see Search the audit log in the Office 365 Security & Compliance Center (https://go.microsoft.com/fwlink/p/?LinkId=708432).  It is renamed because it does not support "search" parameters outside of the start and end dates, it is designed for bulk data gathering.
+The Get-UnifiedAuditLog cmdlet is a wrapper around the Search-UnifiedAuditLog cmdlet that allows you to get data from the unified auditing log available in the Microsoft 365 Security & Compliance Center. For more information, see "Search the audit log" in the Microsoft 365 Security & Compliance Center (https://docs.microsoft.com/en-us/microsoft-365/compliance/search-the-audit-log-in-security-and-compliance?view=o365-worldwide#search-the-audit-log).  It is renamed because it does not support "search" parameters outside of the start and end dates, it is designed for bulk data gathering.
 
-The cmdlet needs to be run with the Exchange powershell module (see https://docs.microsoft.com/en-us/powershell/exchange/exchange-online/connect-to-exchange-online-powershell/mfa-connect-to-exchange-online-powershell?view=exchange-ps) which provides the wrapped cmdlets Search-UnifiedAuditLog and Connect-EXOPSSession.
+The cmdlet requires the Exchange PowerShell module (https://docs.microsoft.com/en-us/powershell/exchange/exchange-online-powershell-v2?view=exchange-ps) which provides the wrapped cmdlet Search-UnifiedAuditLog. (NOTE: The latest Get-UnifiedAuditLog only supports version 2 of the Exchange PowerShell module. Please use Get-UnifiedAuditLog v0.1.0 (https://github.com/counteractive/Get-UnifiedAuditLog/releases/tag/v0.1.0) if you cannot upgrade to version 2.)
 
-If your goal is simply to retrieve the audit logs in a usable format, the Search-UnifiedAuditLog cmdlet is very difficult to use.  This is an effort to smooth out those rough edges, inspired by the script by Tehnoon Raza at https://blogs.msdn.microsoft.com/tehnoonr/2018/01/26/retrieving-office-365-audit-data-using-powershell/, posted January 26, 2018.
+If your goal is simply to retrieve the audit logs in a usable format, the Search-UnifiedAuditLog cmdlet is very difficult to use.  This is an effort to smooth out those rough edges, inspired by a script by Tehnoon Raza (https://blogs.msdn.microsoft.com/tehnoonr/2018/01/26/retrieving-office-365-audit-data-using-powershell/) posted 26 January 2018.
 
-Microsoft recommends "if you want to programmatically download data from the Office 365 audit log ... use the Office 365 Management Activity API".  What they don't say is that using the Management API involves creating an Azure app, managing client keys, and after all that can only access the past 7 days of records.  The Office 365 Management Activity API is certainly useful, but is more cumbersome to use.  See its documentation at https://go.microsoft.com/fwlink/p/?linkid=852309.
+Microsoft recommends "if you want to programmatically download data from the Office 365 audit log ... use the Office 365 Management Activity API".  What they don't say is that using the Management API involves creating an Azure app in the portal, managing client keys, and after all that the API can only access the past 7 days of records.  The Office 365 Management Activity API is certainly useful, but is more cumbersome to use.  See its documentation (https://go.microsoft.com/fwlink/p/?linkid=852309) for more information, or consider using o365beat (https://github.com/counteractive/o365beat).
 
-As with Search-UnifiedAuditLog, you need to be assigned permissions before you can run this cmdlet. To find the permissions required to run any cmdlet or parameter in your organization, see Find the permissions required to run any Exchange cmdlet (https://technet.microsoft.com/library/mt432940.aspx), and look for Search-UnifiedAuditLog.
+As with Search-UnifiedAuditLog, you need to be assigned permissions before you can run this cmdlet. To find the permissions required to run any cmdlet or parameter in your organization, see the online docs (https://technet.microsoft.com/library/mt432940.aspx), and look for Search-UnifiedAuditLog.
 
 .EXAMPLE
-PS C:\> Get-UnifiedAuditLog -StartDate (Get-Date).AddDays(-7) -Upn user@o365.domain.com -IntervalMinutes 120 -Verbose -WarningAction 'Continue' | ConvertTo-Json -Compress -Depth 100 | Out-File .\o365.logs.json -Encoding UTF8
+PS C:\> Get-UnifiedAuditLog -StartDate (Get-Date).AddDays(-7) -IntervalMinutes 120 -Verbose -WarningAction 'Continue' | Select-Object -ExpandProperty AuditData | Out-File .\o365.logs.json -Encoding UTF8
 
-Retrieve the past week's worth of logs using an interval window of 240 minutes.  The interval should be the max available that keeps each "batch" of results under the limit (typically 50,000).  Just FYI, pipe to Out-File and specify the encoding if you plan to use the JSON with any other tooling (jq, filebeat), otherwise you'll get UTF-16 by default (e.g., with the redirect operator (>)).
+Output json AuditData strings (un-parsed) for the past week, using an interval window of 120 minutes. Note, this output file could still contain un-terminated or otherwise erroneous JSON strings, so error checking would need to be done when the output is used.  The interval should be the max available that keeps each "batch" of results under the limit (50,000).  Pipe to Out-File and specify the encoding if you plan to use the JSON with any other tooling (jq, filebeat), otherwise you'll get UTF-16 by default (e.g., with the redirect operator (>)).
+
+PS C:\> Get-UnifiedAuditLog -StartDate (Get-Date).AddDays(-1) -Verbose -WarningAction 'Continue' | Select-Object -ExpandProperty AuditData | ConvertFrom-Json -ErrorAction Continue
+
+Convert json AuditData strings for the past day into PowerShell objects for further use in the pipeline. This setup will print an error on problematic JSON and then continue.
 
 .PARAMETER StartDate
 The StartDate parameter specifies the start date of the date range.
@@ -49,9 +51,6 @@ The IntervalMinutes parameter specifies the size of the window (in minutes) into
 
 In the future one could put some logic in this cmdlet to optimize this automatically, but for now it's by hand.  The default is 30 minutes, which usually works fine.
 
-.PARAMETER ResultSize
-The ResultSize parameter specifies the maximum number of results to return. The default value is 100, maximum is 5,000.  This is usually fine at the default, and may be removed in future versions.
-
 .NOTES
 Submit issues, contribute, and view the license at https://github.com/counteractive.
 #>
@@ -62,10 +61,8 @@ Submit issues, contribute, and view the license at https://github.com/counteract
     [DateTime] $StartDate,
     [DateTime] $EndDate,
     [Int32] $IntervalMinutes,
-    [Int32] $ResultSize,
     [Int32] $SessionSize,
-    [Int32] $RetryLimit,
-    [Parameter(Mandatory=$true)] [String] $Upn
+    [Int32] $RetryLimit
   )
 
   # parameter defaults and invariants:
@@ -79,15 +76,13 @@ Submit issues, contribute, and view the license at https://github.com/counteract
   }
   if (!$EndDate) { $EndDate = $TODAY }
   if ($EndDate -gt $TODAY){
-    Write-Verbose "EndDate can be no newer than today.  Resetting EndDate to $TODAY"
+    Write-Verbose "EndDate can be no later than today.  Resetting EndDate to $TODAY"
     $EndDate = $TODAY
   }
   if (!$IntervalMinutes) { $IntervalMinutes = $DEFAULT_INTERVAL_MINUTES }
-  if (!$ResultSize) { $ResultSize = $DEFAULT_RESULT_SIZE }
   if (!$SessionSize) { $SessionSize = $DEFAULT_SESSION_SIZE }
   if (!$RetryLimit){ $RetryLimit = $DEFAULT_RETRY_LIMIT }
 
-  Connect-EXOPSSession -UserPrincipalName $upn
   $intervalStart = $StartDate
   $totalRecords = 0
 
@@ -96,9 +91,7 @@ Submit issues, contribute, and view the license at https://github.com/counteract
   $intervalCount = [math]::Ceiling($span/$IntervalMinutes)
   $currentInterval = 0
   $progress = 0
-  $errorCount = 0
   Write-Progress -Activity "Retrieving audit logs" -Status "$progress% Complete:" -PercentComplete $progress
-
 
   while ($intervalStart -lt $EndDate){
 
@@ -120,8 +113,9 @@ Submit issues, contribute, and view the license at https://github.com/counteract
     # loop calls to Search-UnifiedAuditLog within one session (one sessionId)
     while ($retries -lt $RetryLimit -and $sessionResultCount -lt  $intervalResultCount){
 
-      # include -Formatted to "cause attributes that are normally returned as integers (for example, RecordType and Operation) to be formatted as descriptive strings."  This removes the need to add in string versions from the wrapper object:
-      $results = Search-UnifiedAuditLog -StartDate $intervalStart -EndDate $intervalEnd -SessionId $sessionId -SessionCommand ReturnLargeSet -ResultSize $ResultSize -Formatted
+      # include -Formatted to "cause attributes that are normally returned as integers (for example, RecordType and Operation) to be formatted as descriptive strings."  This removes the need to add in string versions from the wrapper object.
+
+      $results = Search-UnifiedAuditLog -StartDate $intervalStart -EndDate $intervalEnd -SessionId $sessionId -SessionCommand ReturnLargeSet -Formatted
 
       if ( !$results -or $results.Count -eq 0) {
           $retries = $retries + 1
@@ -140,20 +134,10 @@ Submit issues, contribute, and view the license at https://github.com/counteract
       $sessionResultCount = $sessionResultCount + $results.Count
       Write-Verbose "    Retrieved $([math]::Max($sessionResultCount, 0)) of $intervalResultCount interval records"
 
-      # The actual interesting stuff is in the event's AuditData field, which is a JSON string (!) that needs decoding.  The wrapper object has a RecordType string that is useful to add back in.  Unfortunately, it's also common that JSON string is unterminated, so you also have to catch that error.  Like so:
-
-      foreach ($event in $results){
-        try{
-          # $h = @{}
-          # $o = ($event.AuditData | ConvertFrom-Json)
-          # foreach( $p in $o.PSObject.Properties.Name ){ $h[$p] = $o.$p }
-          # $h['RecordTypeString'] = $event.RecordType
-          Write-Output ($event.AuditData | ConvertFrom-Json)
-        } catch {
-          $errorCount = $errorCount + 1
-          Write-Warning "    Error converting from JSON, probably unterminated string, skipping record ($errorCount records skipped)"
-        }
-      }
+      # The interesting stuff is in the AuditData field, which is a JSON string (!).
+      # The AuditData JSON string can be unterminated, so users must handle that error.
+      # As of v0.2.0, we leave this to users and just document common use-cases
+      Write-Output $results
     }
 
     Write-Verbose "  Retrieved $([math]::Max($sessionResultCount, 0)) total interval records (session id $sessionId)"
@@ -162,7 +146,6 @@ Submit issues, contribute, and view the license at https://github.com/counteract
 
   }
   Write-Verbose "Retrieved $totalRecords total records from $StartDate to $EndDate"
-  Get-PSSession | Remove-PSSession
 }
 
 Export-ModuleMember -Function Get-UnifiedAuditLog
