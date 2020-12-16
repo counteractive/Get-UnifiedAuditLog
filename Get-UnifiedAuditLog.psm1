@@ -146,7 +146,10 @@ Submit issues, contribute, and view the license at https://github.com/counteract
         $intervalResultCount = $SESSION_SIZE_LIMIT
       }
 
-      $sessionResultCount = $sessionResultCount + $results.Count
+      $resultsCount = 1 # if there's only one result then $results is not an array (and thus won't have a .Count property) 
+      if ($results.Count) { $resultsCount = $results.Count }
+      $sessionResultCount = $sessionResultCount + $resultsCount
+
       Write-Verbose "    Retrieved $([math]::Max($sessionResultCount, 0)) of $intervalResultCount interval records"
 
       # The interesting stuff is in the AuditData field, which is a JSON string (!).
