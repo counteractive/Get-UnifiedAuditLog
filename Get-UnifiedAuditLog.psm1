@@ -1,5 +1,6 @@
 ﻿$SESSION_SIZE_LIMIT = 50000 # max permitted under SessionCommand ReturnLargeSet
 $DEFAULT_INTERVAL_MINUTES = 30
+$DEFAULT_RESULT_SIZE = 100
 $DEFAULT_SESSION_SIZE = $SESSION_SIZE_LIMIT
 $DEFAULT_RETRY_LIMIT = 3
 
@@ -51,6 +52,11 @@ The IntervalMinutes parameter specifies the size of the window (in minutes) into
 
 In the future one could put some logic in this cmdlet to optimize this automatically, but for now it's by hand.  The default is 30 minutes, which usually works fine.
 
+.PARAMETER ResultSize
+The ResultSize parameter specifies the maximum number of results to return (per batch). The default value is 100, maximum is 5,000.
+
+Larger values can reduce the number of batches required to collect each interval's worth of events.  Unless your network connection is unreliable, you can typically keep this at or above 1000 without any issues.
+
 .NOTES
 Submit issues, contribute, and view the license at https://github.com/counteractive.
 #>
@@ -61,6 +67,7 @@ Submit issues, contribute, and view the license at https://github.com/counteract
     [DateTime] $StartDate,
     [DateTime] $EndDate,
     [Int32] $IntervalMinutes,
+    [Int32] $ResultSize,
     [Int32] $SessionSize,
     [Int32] $RetryLimit
   )
@@ -80,6 +87,14 @@ Submit issues, contribute, and view the license at https://github.com/counteract
     $EndDate = $TODAY
   }
   if (!$IntervalMinutes) { $IntervalMinutes = $DEFAULT_INTERVAL_MINUTES }
+  if (!$ResultSize) { $ResultSize = $DEFAULT_RESULT_SIZE }
+  if ($ResultSize -lt 1 ) {
+    Write-Verbose "ResultSize can be no less than 1.  Resetting ResultSize to 1"
+    $ResultSize = 1
+  } elseif ($ResultSize -gt 5000) {
+    Write-Verbose "ResultSize can be no more than 5000.  Resetting ResultSize to 5000"
+    $ResultSize = 5000
+  }
   if (!$SessionSize) { $SessionSize = $DEFAULT_SESSION_SIZE }
   if (!$RetryLimit){ $RetryLimit = $DEFAULT_RETRY_LIMIT }
 
@@ -115,7 +130,7 @@ Submit issues, contribute, and view the license at https://github.com/counteract
 
       # include -Formatted to "cause attributes that are normally returned as integers (for example, RecordType and Operation) to be formatted as descriptive strings."  This removes the need to add in string versions from the wrapper object.
 
-      $results = Search-UnifiedAuditLog -StartDate $intervalStart -EndDate $intervalEnd -SessionId $sessionId -SessionCommand ReturnLargeSet -Formatted
+      $results = Search-UnifiedAuditLog -StartDate $intervalStart -EndDate $intervalEnd -SessionId $sessionId -SessionCommand ReturnLargeSet -ResultSize $ResultSize -Formatted
 
       if ( !$results -or $results.Count -eq 0) {
           $retries = $retries + 1

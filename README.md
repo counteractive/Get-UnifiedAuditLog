@@ -6,7 +6,7 @@ Gets events from the Office 365 unified audit log and outputs them into the pipe
 
 ## Description
 
-The `Get-UnifiedAuditLog` cmdlet is a wrapper around the `Search-UnifiedAuditLog` cmdlet that allows you to get data from the unified auditing log available in the ~~Office~~ Microsoft 365 Security & Compliance Center. For more information, see "Search the audit log" in the [Microsoft 365 Security & Compliance Center](https://docs.microsoft.com/en-us/microsoft-365/compliance/search-the-audit-log-in-security-and-compliance?view=o365-worldwide#search-the-audit-log).  It is renamed because it does not support "search" parameters outside of the start and end dates, it is designed for bulk data gathering.
+The `Get-UnifiedAuditLog` cmdlet is a wrapper around the [`Search-UnifiedAuditLog`](https://docs.microsoft.com/en-us/powershell/module/exchange/search-unifiedauditlog?view=exchange-ps) cmdlet that allows you to get data from the unified auditing log available in the ~~Office~~ Microsoft 365 Security & Compliance Center. For more information, see "Search the audit log" in the [Microsoft 365 Security & Compliance Center](https://docs.microsoft.com/en-us/microsoft-365/compliance/search-the-audit-log-in-security-and-compliance?view=o365-worldwide#search-the-audit-log).  It is renamed because it does not support "search" parameters outside of the start and end dates, it is designed for bulk data gathering.
 
 The cmdlet requires the [Exchange PowerShell module](https://docs.microsoft.com/en-us/powershell/exchange/exchange-online-powershell-v2?view=exchange-ps) (`ExchangeOnlineManagement`) which provides the wrapped cmdlet `Search-UnifiedAuditLog`. (**NOTE: The latest `Get-UnifiedAuditLog` only supports version 2 of the Exchange PowerShell module.** Please use `Get-UnifiedAuditLog` [v0.1.0](https://github.com/counteractive/Get-UnifiedAuditLog/releases/tag/v0.1.0) if you cannot upgrade to version 2.)
 
@@ -70,6 +70,12 @@ If omitted, the default for EndDate is the current date, as returned by Get-Date
 The IntervalMinutes parameter specifies the size of the window (in minutes) into which the cmdlet will break the overall timespan.  Smaller intervals lead to more requests, but the underlying cmdlet cannot return more than 50,000 records for a single session ID, so bigger is not always better.  Plus, if you keep this modest, you get more granular progress monitoring.
 
 In the future one could put some logic in this cmdlet to optimize this automatically, but for now it's by hand.  The default is 30 minutes, which usually works fine.
+
+### ResultSize
+
+The ResultSize parameter specifies the maximum number of results to return (per batch). The default value is 100, maximum is 5,000.
+
+Larger values can reduce the number of batches required to collect each interval's worth of events.  Unless your network connection is unreliable, you can typically keep this at or above 1000 without any issues.
 
 ## Notes
 
